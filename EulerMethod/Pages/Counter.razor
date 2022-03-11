@@ -1,0 +1,104 @@
+﻿@page "/"
+@page "/euler"
+@using NCalc
+@using System.Numerics
+<PageTitle>Euler Method</PageTitle>
+
+<h1>Counter</h1>
+<form 
+    <p> <label for="expression">dy/dx: </label> 
+    <input @bind="@myExpression" type="text"/> <br> </p>
+    <p> <label for="variables">x initial: </label>
+    <input @bind="@x0" type="number"/> <t /> </p>
+    <p> <label for="variables">y initial: </label> 
+    <input @bind="@y0" type="number"/> <br /> </p>
+    <p> <label for="variables">Step size h: </label>
+    <input @bind="@h" type="number"/><br /> </p>
+    <p> <label for="variables">x destination: </label>
+    <input @bind="@x" type="number"/><br /> </p>
+</form>
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@if (resultLists == null) {
+    <p><em>Please input your parameters...</em></p>
+} else {
+    <table class="table"> 
+        <thead>
+            <tr>
+                <th>Index N</th>
+                <th>y(N-1)</th>
+                <th>Step</th>
+                <th>x(N-1)</th>
+                <th>y(N-1)</th>
+                <th>y(N) - result</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (List<double> resultEuler in resultLists)
+            {
+            <tr>
+                <td>@resultEuler[0]</td>
+                <td step=0.00001>@resultEuler[1]</td>
+                <td>@resultEuler[2]</td>
+                <td>@resultEuler[3]</td>
+                <td step=0.00001>@resultEuler[4]</td>
+                <td step=0.00001>@resultEuler[5]</td>
+            </tr>
+        }
+    </tbody>
+</table>
+}
+
+@code {
+    private int currentCount = 0;
+    private string myExpression { get; set; } = "Sqrt(x/(4 * y))";
+
+    private double x0 = 4;
+    private double y0 = 4;
+    private double h = 0.1;
+    private double x = 4.5;
+    private double yUpdate;
+
+    private List<List <double>> resultLists = new List<List <double>>(); 
+    private void IncrementCount()
+    {
+        currentCount = 0;
+        resultLists = new List<List<double>>();
+        Expression e = new Expression(myExpression + "*h + y0");
+        e.Parameters["h"] = h;
+        int count = BitConverter.GetBytes(decimal.GetBits((decimal)(h))[3])[2];
+        yUpdate = y0;
+        for (double xTmp = x0; xTmp < x; xTmp += h)
+        {
+            e.Parameters["x"] = xTmp;
+            e.Parameters["y"] = yUpdate;
+            e.Parameters["y0"] = yUpdate;
+            Console.WriteLine(String.Format("Set x: {0} y: {1} h: {2} y0: {3}", x0, y0, h, y0));
+
+            if(e.Evaluate() is double)
+            {
+                currentCount++;
+
+                Console.WriteLine(e.Evaluate());
+                double yOld = yUpdate;
+                yUpdate = ((IConvertible)e.Evaluate()).ToDouble(null);
+
+
+                List<double> resultTmp = new List<double>()
+                {
+                    currentCount,
+                    Math.Round(yOld, 5),
+                    h,
+                    Math.Round(xTmp, count),
+                    Math.Round(yOld, 5),
+                    Math.Round(yUpdate, 5)
+                };
+                resultLists.Add(resultTmp);
+    } else
+            {
+                Console.WriteLine("Error during convert to Double");
+                break;
+            }
+        }
+    }
+}
